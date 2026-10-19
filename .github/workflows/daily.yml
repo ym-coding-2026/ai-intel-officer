@@ -1,0 +1,47 @@
+name: AI 情报官 · 每日日报
+
+# v2.5 定时推送：每天云端自动跑流水线，把日报提交回仓库
+# 触发方式：
+#   1) 定时：每天 UTC 01:00（= 北京时间 09:00）自动跑
+#   2) 手动：在 GitHub 仓库 → Actions 页面点 "Run workflow" 立即跑（方便测试，不用等定时）
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+# 允许工作流把生成的日报 push 回仓库
+permissions:
+  contents: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取仓库代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 跑流水线（生成今日日报）
+        env:
+          # 没设 DEEPSEEK_API_KEY 也能跑：summarizer 会自动降级为规则摘要
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: python main.py
+
+      - name: 把生成的日报提交回仓库
+        run: |
+          git config user.name "ai-intel-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add reports/
+          if git diff --cached --quiet; then
+            echo "今日无新日报，跳过提交"
+          else
+            git commit -m "chore: 自动生成 $(date +%F) 情报日报"
+            git push
+          fi
