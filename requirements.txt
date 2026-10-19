@@ -1,2 +1,2 @@
 openai
-feedparser 注：v2 语义去重依赖 sentence-transformers + torch（约 1~2GB）。 在 GitHub Actions 云端为求稳定与速度，默认不装，dedup 工厂会自动降级回 bigram。 若想云端也用 BGE 语义去重，取消下面这行的注释（install 会变慢）： sentence-transformers
+feedparser
