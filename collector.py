@@ -11,7 +11,26 @@ v2.2 改进：
 - 零网络或全部源失败时，自动降级为内置示例数据，流水线不崩。
 依赖：pip install feedparser
 """
+import re
+
 import feedparser
+
+# 白名单清洗：RSS 标题偶尔混入乱码（坏掉的 emoji、不可见控制符、生僻符号块），
+# 只保留常用字符（英文/数字/汉字/中英文标点），其余一律剔除。
+# 代价是标题里的 emoji 也会被去掉——用一点装饰换日报干净，值得。
+_SAFE_CHAR = re.compile(
+    "[^\\u0020-\\u007e"   # 英文、数字、常用英文符号
+    "\\u00a0-\\u024f"     # 拉丁字母扩展（拼音、欧洲字母）
+    "\\u2013\\u2014\\u2018\\u2019\\u201c\\u201d\\u2026\\u00b7"  # 常见引号破折号省略号
+    "\\u3000-\\u303f"     # 中文标点
+    "\\u4e00-\\u9fff"     # 汉字
+    "\\uff00-\\uffef]"    # 全角字母数字标点
+)
+
+
+def _clean(text):
+    """剔除乱码/不可见字符，返回干净文本。"""
+    return _SAFE_CHAR.sub("", text).strip()
 
 # 伪装成浏览器的身份声明。网站看到这个，就当作正常访客对待
 HEADERS = {
@@ -44,10 +63,10 @@ def fetch_feed(source, timeout=15, limit=15):
     entries = getattr(parsed, "entries", []) or []
     items = []
     for e in entries[:limit]:
-        title = (e.get("title") or "").strip()
+        title = _clean(e.get("title") or "")
         if not title:
             continue
-        summary = (e.get("summary") or e.get("description") or "").strip()
+        summary = _clean(e.get("summary") or e.get("description") or "")
         link = (e.get("link") or "").strip()
         items.append(
             {
