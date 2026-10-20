@@ -3,32 +3,32 @@
   "topics": [
     {
       "name": "Agent",
-      "weight": 0.969,
+      "weight": 0.94,
       "seen": 2
     },
     {
       "name": "智能体",
-      "weight": 0.969,
+      "weight": 0.94,
       "seen": 2
     },
     {
       "name": "大模型",
-      "weight": 0.969,
+      "weight": 0.94,
       "seen": 2
     },
     {
       "name": "实习",
-      "weight": 0.76,
+      "weight": 0.737,
       "seen": 0
     },
     {
       "name": "开源",
-      "weight": 1.764,
-      "seen": 8
+      "weight": 1.864,
+      "seen": 9
     },
     {
       "name": "RAG",
-      "weight": 0.76,
+      "weight": 0.737,
       "seen": 0
     }
   ]
