@@ -1,9 +1,7 @@
 """摘要模块：把每条资讯浓缩成一句话「情报要点」。
 
-优先走 LLM（OpenAI 兼容接口，DeepSeek / Kimi 都行）；
+优先走 LLM（DeepSeek，OpenAI 兼容接口）；
 没有 Key 或网络不通时，自动降级为规则摘要（取内容前 40 字），流水线不断。
-
-升级路线（v2）：一次请求批量总结所有资讯 + 生成整份日报的「今日导读」。
 """
 import os
 
@@ -26,7 +24,9 @@ def summarize_all(items, api_key=None, base_url=None, model=None):
     if api_key:
         try:
             from openai import OpenAI
-            client = OpenAI(api_key=api_key, base_url=base_url)
+            # timeout：构造时 + 调用时双重保护，防止云端调 API 卡死整条流水线
+            client = OpenAI(api_key=api_key, base_url=base_url, timeout=20)
+            print("[摘要] 已启用 LLM 摘要（DeepSeek）")
         except Exception as e:
             print(f"[摘要] LLM 客户端初始化失败（{e.__class__.__name__}），使用规则摘要")
 
@@ -44,6 +44,7 @@ def summarize_all(items, api_key=None, base_url=None, model=None):
                 model=model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.3,
+                timeout=20,
             )
             it["brief"] = resp.choices[0].message.content.strip()
         except Exception as e:
