@@ -12,6 +12,7 @@ v4 让它主动找你：企业微信群 / 邮箱，哪个配了走哪个。
 """
 import json
 import os
+import re
 import smtplib
 import ssl
 from email.header import Header
@@ -75,6 +76,16 @@ def send_email(subject, body):
     return True
 
 
+def _derive_subject(markdown):
+    """v4.5：从日报正文自动提炼邮件主题，例如「AI 情报官 · 14 条情报 · Top1标题」。"""
+    heads = re.findall(r"^###\s+\d*\.?\s*(.+)$", markdown, re.M)
+    count = len(re.findall(r"^###\s", markdown, re.M))
+    top = heads[0] if heads else "每日情报"
+    if len(top) > 30:
+        top = top[:30] + "…"
+    return f"AI 情报官 · {count} 条情报 · {top}"
+
+
 def notify(markdown, title="AI 情报官 · 日报"):
     """按配置把日报推送出去。返回实际送达的渠道名列表（可能为空）。"""
     sent = []
@@ -89,7 +100,7 @@ def notify(markdown, title="AI 情报官 · 日报"):
 
     if email_ready():
         try:
-            send_email(title, markdown)
+            send_email(_derive_subject(markdown), markdown)
             sent.append("邮箱")
             print(f"[推送] 邮箱：已送达 {_cfg('MAIL_TO') or _cfg('SMTP_USER')}")
         except Exception as ex:
