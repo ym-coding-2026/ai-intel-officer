@@ -1,34 +1,34 @@
 {
-  "updated": "2026-10-21",
+  "updated": "2026-10-22",
   "topics": [
     {
       "name": "Agent",
-      "weight": 0.858,
-      "seen": 2
+      "weight": 0.958,
+      "seen": 3
     },
     {
       "name": "智能体",
-      "weight": 0.858,
+      "weight": 0.832,
       "seen": 2
     },
     {
       "name": "大模型",
-      "weight": 0.858,
+      "weight": 0.832,
       "seen": 2
     },
     {
       "name": "实习",
-      "weight": 0.673,
+      "weight": 0.653,
       "seen": 0
     },
     {
       "name": "开源",
-      "weight": 2.164,
-      "seen": 12
+      "weight": 2.264,
+      "seen": 13
     },
     {
       "name": "RAG",
-      "weight": 0.673,
+      "weight": 0.653,
       "seen": 0
     }
   ]
