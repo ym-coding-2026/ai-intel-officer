@@ -52,6 +52,8 @@ FORCE_BIGRAM=1 python main.py        # 跳过语义模型，秒跑（适合没�
 python ask.py "今天 Agent 有什么新进展"   # 问情报官（RAG 问答）
 python weekly.py                     # 出本周周报
 python eval.py                       # 跑评测集，看检索召回@5
+uvicorn server:app --reload          # v5 网页问答接口（手写版引擎）
+uvicorn server_lcel:app --reload     # v6 网页问答接口（LangChain LCEL 版：/ask 非流式 + /ask/stream 流式）
 ```
 
 ## 项目结构
