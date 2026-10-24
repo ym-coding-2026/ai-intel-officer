@@ -22,6 +22,7 @@ AI 领域一天几十条新闻，同一件事七八家媒体重复报。人工�
 | v4.8 | DeepSeek 真·AI 摘要（写人话要点） |
 | v5 | RAG 问答：你问，它翻档案回答 |
 | v5.1 | 混合检索（BM25 + 向量 RRF）、query rewrite、LLM rerank、强制引用、评测集 |
+| v6 | **用 LCEL 重写 RAG 问答**：检索→prompt→模型→解析写成 LangChain 管道，支持流式输出 |
 
 ## 项目亮点（简历话术）
 
@@ -67,6 +68,8 @@ python eval.py                       # 跑评测集，看检索召回@5
 | weekly.py | v4.7 周报：读历史日报聚类汇总 |
 | rag.py | v5.1 RAG 引擎：BM25 + 向量混合检索(RRF) + 改写 + 重排 + 强制引用 |
 | ask.py | v5 问答入口：`python ask.py "问题"` |
+| rag_lcel.py | v6 LCEL 重写版引擎：`检索 → prompt → 模型 → 解析` 写成 LangChain 管道 |
+| ask_lcel.py | v6 问答入口：`python ask_lcel.py "问题"`（支持 `--stream` 流式） |
 | eval.py / eval.json | v5.1 评测集与评测脚本（检索召回@5 / 答案命中率） |
 | memory/interests.json | 记忆文件（自动生成，随仓库回仓，跨天持久） |
 | reports/ | 每日日报；reports/weekly/ 存放周报 |
@@ -184,6 +187,43 @@ python eval.py                  # 看检索召回@5（纯标准库可离线跑�
 export USE_VECTOR=1             # 可选：开启向量混合检索（需 sentence-transformers）
 python ask.py "世界模型有什么进展"
 ```
+
+## v6 用 LCEL 重写 RAG 问答（LangChain）
+
+v6 把 v5.1 里"手工拼 prompt + 直连 OpenAI SDK"的问答代码，用 **LCEL（LangChain Expression Language）** 重写成一条管道。检索部分（BM25 + 向量 + 改写 + 重排）完全复用 `rag.py`，只重写"生成"这一段——因为那正是 LCEL 最擅长的「把零件接成水管」场景。
+
+**核心就一行**（见 `rag_lcel.py`）：
+
+```python
+chain = (
+    {"context": retriever | format_docs, "question": RunnablePassthrough()}
+    | PROMPT        # 把问题 + 检索到的资料填进提示词模板
+    | model         # ChatOpenAI（DeepSeek 兼容接口）
+    | StrOutputParser()   # 把模型回答解析成纯文字
+)
+```
+
+数据像水一样从左流到右：`问题` → 检索出相关资料 → 拼成上下文 → 填进模板 → 发给模型 → 解析出答案。
+
+**为什么要这么写（LCEL 白送的能力，不用自己造）：**
+
+| 能力 | 怎么用 | 说明 |
+|---|---|---|
+| 一次性回答 | `chain.invoke(question)` | 替代原来手工拼 prompt + 调 SDK |
+| 流式输出 | `chain.stream(question)` | 字一个个蹦出来（打字机），`ask_lcel.py --stream` 即用 |
+| 批量并行 | `chain.batch([q1, q2, ...])` | 一次问多个问题，自动并行 |
+| 原生容错/重试/异步 | 框架内置 | 不用像 `rag.py` 那样手写超时重试 |
+
+**用法：**
+
+```bash
+pip install langchain langchain-openai langchain-core   # v6 新增依赖（已写入 requirements.txt）
+python ask_lcel.py "什么是多 Agent"          # 普通回答（带 [n] 引用）
+python ask_lcel.py --stream "什么是多 Agent"  # 流式逐字输出
+python ask_lcel.py                            # 交互模式连续问
+```
+
+> 设计取舍：原 `rag.py` / `ask.py` 保留不动（`server.py` 仍用它），`rag_lcel.py` / `ask_lcel.py` 是 LCEL 对照版，方便你对比"手写"和"用框架"两种写法——这也是学 LCEL 最好的方式。检索结果包成 LangChain 的 `Document`，以后想换成真正的向量库（FAISS / Chroma）`Retriever` 也只是换个组件的事。
 
 ## 调参笔记
 

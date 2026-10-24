@@ -1,3 +1,7 @@
 openai
 feedparser
 fastapi[standard]
+# LCEL 重写版 RAG（rag_lcel.py / ask_lcel.py）依赖
+langchain
+langchain-core
+langchain-openai
